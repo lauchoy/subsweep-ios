@@ -52,12 +52,20 @@ struct Subscription: Identifiable, Codable, Equatable {
 
     /// Rolls `nextRenewal` forward past `now` so the list never shows a renewal in the past.
     func upcomingRenewal(from now: Date = .now, calendar: Calendar = .current) -> Date {
+        // Step from the original date each time so a 31st clamps per month instead of drifting to the 28th.
+        let start = calendar.startOfDay(for: now)
         var date = nextRenewal
-        var guardCount = 0
-        while date < calendar.startOfDay(for: now), guardCount < 1000 {
-            guard let next = calendar.date(byAdding: cycle.calendarStep, to: date) else { break }
+        var periods = 0
+        while date < start, periods < 2000 {
+            periods += 1
+            let step = cycle.calendarStep
+            let total = DateComponents(
+                year: step.year.map { $0 * periods },
+                month: step.month.map { $0 * periods },
+                day: step.day.map { $0 * periods }
+            )
+            guard let next = calendar.date(byAdding: total, to: nextRenewal) else { break }
             date = next
-            guardCount += 1
         }
         return date
     }

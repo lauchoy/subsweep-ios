@@ -35,7 +35,10 @@ enum ServiceCatalog {
 
     /// Where to cancel: the service's own page, else Apple's subscriptions page (covers anything billed through the App Store).
     static func cancelURL(for name: String) -> URL {
-        match(name)?.cancelURL ?? URL(string: "https://apps.apple.com/account/subscriptions")!
+        if let url = match(name)?.cancelURL { return url }
+        var components = URLComponents(string: "https://www.google.com/search")!
+        components.queryItems = [URLQueryItem(name: "q", value: "how to cancel \(name) subscription")]
+        return components.url!
     }
 
     static func symbol(for name: String) -> String {

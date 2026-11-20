@@ -44,8 +44,19 @@ final class SubscriptionStoreTests: XCTestCase {
         XCTAssertEqual(s.upcomingRenewal(from: now, calendar: calendar), calendar.date(from: DateComponents(year: 2026, month: 4, day: 15)))
     }
 
-    func testCancelURLFallsBackToAppStore() {
+    func testMonthEndRenewalDoesNotDrift() {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "UTC")!
+        let start = calendar.date(from: DateComponents(year: 2026, month: 1, day: 31))!
+        let now = calendar.date(from: DateComponents(year: 2026, month: 11, day: 19))!
+        let s = Subscription(name: "X", price: 1, cycle: .monthly, nextRenewal: start)
+        XCTAssertEqual(s.upcomingRenewal(from: now, calendar: calendar), calendar.date(from: DateComponents(year: 2026, month: 11, day: 30)))
+    }
+
+    func testCancelURLFallsBackToServiceSearch() {
         XCTAssertEqual(ServiceCatalog.cancelURL(for: "netflix").host, "www.netflix.com")
-        XCTAssertEqual(ServiceCatalog.cancelURL(for: "Some Random App").host, "apps.apple.com")
+        let fallback = ServiceCatalog.cancelURL(for: "Some Random App")
+        XCTAssertEqual(fallback.host, "www.google.com")
+        XCTAssertTrue(fallback.absoluteString.contains("Some%20Random%20App"))
     }
 }
