@@ -14,7 +14,9 @@ final class ProStore {
     private var updatesTask: Task<Void, Never>?
 
     private let forcePro: Bool
+    #if targetEnvironment(simulator)
     private let simulatorFallbackKey = "subsweep.pro.simulatorFallbackUnlock"
+    #endif
 
     init(forcePro: Bool = false) {
         self.forcePro = forcePro
@@ -44,7 +46,10 @@ final class ProStore {
                 return
             }
         }
-        guard !forcePro, !UserDefaults.standard.bool(forKey: simulatorFallbackKey) else { return }
+        guard !forcePro else { return }
+        #if targetEnvironment(simulator)
+        if UserDefaults.standard.bool(forKey: simulatorFallbackKey) { return }
+        #endif
         isPro = false
         UserDefaults.standard.set(false, forKey: unlockedKey)
     }
