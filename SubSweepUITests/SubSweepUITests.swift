@@ -48,6 +48,10 @@ final class SubSweepUITests: XCTestCase {
 
         row.tap()
         app.buttons["deleteSubscription"].tap()
+        let confirm = app.buttons["Delete Gym"]
+        XCTAssertTrue(confirm.waitForExistence(timeout: 5))
+        XCTAssertTrue(row.exists, "Delete must wait for confirmation")
+        confirm.tap()
         XCTAssertTrue(app.buttons["emptyAddButton"].waitForExistence(timeout: 5))
         XCTAssertEqual(label("monthlyTotal"), "$0.00")
     }
@@ -90,5 +94,18 @@ final class SubSweepUITests: XCTestCase {
         app.buttons["unlockPro"].tap()
         XCTAssertTrue(app.staticTexts["paywallTitle"].waitForNonExistence(timeout: 10))
         XCTAssertFalse(app.staticTexts["freeSlots"].exists)
+    }
+
+    func testInvalidPriceIsRejected() {
+        launch()
+        app.buttons["addSubscription"].tap()
+        let name = app.textFields["nameField"]
+        name.tap()
+        name.typeText("Gym")
+        let price = app.textFields["priceField"]
+        price.tap()
+        price.typeText("abc12.34xyz")
+        XCTAssertTrue(app.staticTexts["priceError"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["saveSubscription"].isEnabled)
     }
 }

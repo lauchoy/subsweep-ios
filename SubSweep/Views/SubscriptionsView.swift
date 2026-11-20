@@ -6,6 +6,7 @@ struct SubscriptionsView: View {
     @State private var editing: Subscription?
     @State private var showingNew = false
     @State private var showingPaywall = false
+    @State private var pendingDelete: Subscription?
 
     var body: some View {
         NavigationStack {
@@ -30,8 +31,8 @@ struct SubscriptionsView: View {
                             Button { editing = sub } label: { SubscriptionRow(sub: sub) }
                                 .buttonStyle(.plain)
                                 .accessibilityIdentifier("row_\(sub.name)")
-                                .swipeActions {
-                                    Button("Delete", role: .destructive) { store.delete(id: sub.id); reschedule() }
+                                .swipeActions(allowsFullSwipe: false) {
+                                    Button("Delete", role: .destructive) { pendingDelete = sub }
                                 }
                         }
                     }
@@ -59,6 +60,12 @@ struct SubscriptionsView: View {
                                      onDelete: { store.delete(id: sub.id); reschedule() })
             }
             .sheet(isPresented: $showingPaywall) { PaywallView() }
+            .confirmationDialog("Delete \(pendingDelete?.name ?? "")?",
+                                isPresented: Binding(get: { pendingDelete != nil }, set: { if !$0 { pendingDelete = nil } }),
+                                titleVisibility: .visible,
+                                presenting: pendingDelete) { sub in
+                Button("Delete \(sub.name)", role: .destructive) { store.delete(id: sub.id); reschedule() }
+            }
         }
     }
 

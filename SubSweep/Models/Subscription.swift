@@ -70,3 +70,15 @@ struct Subscription: Identifiable, Codable, Equatable {
         return date
     }
 }
+
+extension Subscription {
+    /// Accepts "9.99", "9,99", "$9.99" or "12"; rejects negatives, letters and zero.
+    static func parsePrice(_ text: String) -> Decimal? {
+        var trimmed = text.trimmingCharacters(in: .whitespaces)
+        if trimmed.hasPrefix("$") { trimmed = String(trimmed.dropFirst()).trimmingCharacters(in: .whitespaces) }
+        guard trimmed.wholeMatch(of: /\d{1,6}([.,]\d{1,2})?/) != nil,
+              let value = Decimal(string: trimmed.replacingOccurrences(of: ",", with: ".")),
+              value > 0 else { return nil }
+        return value
+    }
+}

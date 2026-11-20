@@ -6,6 +6,15 @@ final class SubscriptionStoreTests: XCTestCase {
         Subscription(name: name, price: Decimal(string: price)!, cycle: cycle, nextRenewal: .now, verdict: verdict)
     }
 
+    func testParsePrice() {
+        XCTAssertEqual(Subscription.parsePrice("9.99"), Decimal(string: "9.99"))
+        XCTAssertEqual(Subscription.parsePrice(" $12,50 "), Decimal(string: "12.50"))
+        XCTAssertEqual(Subscription.parsePrice("30"), 30)
+        for bad in ["-9.99", "abc12.34xyz", "0", "", "1.2.3", "9.999", "$"] {
+            XCTAssertNil(Subscription.parsePrice(bad), bad)
+        }
+    }
+
     func testTotalsNormalizeCycles() {
         let store = SubscriptionStore(fileURL: nil, seed: [sub("A", "10"), sub("B", "120", .yearly), sub("C", "30", .quarterly)])
         XCTAssertEqual(store.monthlyTotal, 30)

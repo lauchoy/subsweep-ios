@@ -14,6 +14,7 @@ struct SubscriptionFormView: View {
     @State private var nextRenewal: Date
     @State private var category: String
     @State private var remindDays: Int
+    @State private var confirmingDelete = false
 
     init(subscription: Subscription?, onSave: @escaping (Subscription) -> Void, onDelete: (() -> Void)? = nil) {
         original = subscription
@@ -27,11 +28,7 @@ struct SubscriptionFormView: View {
         _remindDays = State(initialValue: subscription.map { $0.remindDaysBefore ?? -1 } ?? 2)
     }
 
-    private var price: Decimal? {
-        let cleaned = priceText.replacingOccurrences(of: ",", with: ".").filter { "0123456789.".contains($0) }
-        guard let value = Decimal(string: cleaned), value > 0 else { return nil }
-        return value
-    }
+    private var price: Decimal? { Subscription.parsePrice(priceText) }
 
     private var canSave: Bool { !name.trimmingCharacters(in: .whitespaces).isEmpty && price != nil }
 
@@ -62,6 +59,12 @@ struct SubscriptionFormView: View {
                     TextField("Price", text: $priceText)
                         .keyboardType(.decimalPad)
                         .accessibilityIdentifier("priceField")
+                    if !priceText.isEmpty && price == nil {
+                        Text("Enter a price like 9.99")
+                            .font(.footnote)
+                            .foregroundStyle(.red)
+                            .accessibilityIdentifier("priceError")
+                    }
                     Picker("Billed", selection: $cycle) {
                         ForEach(BillingCycle.allCases) { Text($0.label).tag($0) }
                     }
@@ -81,8 +84,11 @@ struct SubscriptionFormView: View {
                         Button("Open cancel page") { openURL(ServiceCatalog.cancelURL(for: original.name)) }
                             .accessibilityIdentifier("openCancelPage")
                         if let onDelete {
-                            Button("Delete subscription", role: .destructive) { onDelete(); dismiss() }
+                            Button("Delete subscription", role: .destructive) { confirmingDelete = true }
                                 .accessibilityIdentifier("deleteSubscription")
+                                .confirmationDialog("Delete \(original.name)?", isPresented: $confirmingDelete, titleVisibility: .visible) {
+                                    Button("Delete \(original.name)", role: .destructive) { onDelete(); dismiss() }
+                                }
                         }
                     }
                 }
