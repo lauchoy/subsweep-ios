@@ -10,9 +10,31 @@ final class SubscriptionStoreTests: XCTestCase {
         XCTAssertEqual(Subscription.parsePrice("9.99"), Decimal(string: "9.99"))
         XCTAssertEqual(Subscription.parsePrice(" $12,50 "), Decimal(string: "12.50"))
         XCTAssertEqual(Subscription.parsePrice("30"), 30)
-        for bad in ["-9.99", "abc12.34xyz", "0", "", "1.2.3", "9.999", "$"] {
+        XCTAssertEqual(Subscription.parsePrice("0"), 0)
+        XCTAssertEqual(Subscription.parsePrice("99999.99"), Subscription.maxPrice)
+        for bad in ["-9.99", "abc12.34xyz", "", "1.2.3", "9.999", "0.001", "$", "100000", "999999999999"] {
             XCTAssertNil(Subscription.parsePrice(bad), bad)
         }
+    }
+
+    func testReminderBeforeThisRenewalWhenThereIsTime() {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "UTC")!
+        let now = calendar.date(from: DateComponents(year: 2026, month: 11, day: 19, hour: 9))!
+        var s = Subscription(name: "X", price: 1, cycle: .monthly, nextRenewal: calendar.date(from: DateComponents(year: 2026, month: 11, day: 25))!)
+        s.remindDaysBefore = 2
+        XCTAssertEqual(s.nextReminder(from: now, calendar: calendar), calendar.date(from: DateComponents(year: 2026, month: 11, day: 23, hour: 10)))
+    }
+
+    func testLateReminderMovesToNextRenewal() {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "UTC")!
+        let now = calendar.date(from: DateComponents(year: 2026, month: 11, day: 19, hour: 11))!
+        var s = Subscription(name: "X", price: 1, cycle: .monthly, nextRenewal: calendar.date(from: DateComponents(year: 2026, month: 11, day: 20))!)
+        s.remindDaysBefore = 1
+        XCTAssertEqual(s.nextReminder(from: now, calendar: calendar), calendar.date(from: DateComponents(year: 2026, month: 12, day: 19, hour: 10)))
+        s.remindDaysBefore = nil
+        XCTAssertNil(s.nextReminder(from: now, calendar: calendar))
     }
 
     func testTotalsNormalizeCycles() {

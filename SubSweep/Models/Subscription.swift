@@ -72,13 +72,33 @@ struct Subscription: Identifiable, Codable, Equatable {
 }
 
 extension Subscription {
-    /// Accepts "9.99", "9,99", "$9.99" or "12"; rejects negatives, letters and zero.
+    static let maxPrice: Decimal = 99_999.99
+
+    /// Accepts "9.99", "9,99", "$9.99", "12" or "0" (free trial); rejects negatives, letters and more than 2 decimals.
     static func parsePrice(_ text: String) -> Decimal? {
         var trimmed = text.trimmingCharacters(in: .whitespaces)
         if trimmed.hasPrefix("$") { trimmed = String(trimmed.dropFirst()).trimmingCharacters(in: .whitespaces) }
-        guard trimmed.wholeMatch(of: /\d{1,6}([.,]\d{1,2})?/) != nil,
+        guard trimmed.wholeMatch(of: /\d{1,5}([.,]\d{1,2})?/) != nil,
               let value = Decimal(string: trimmed.replacingOccurrences(of: ",", with: ".")),
-              value > 0 else { return nil }
+              value <= maxPrice else { return nil }
         return value
+    }
+
+    static let reminderHour = 10
+
+    /// The next reminder that is still in the future: before this renewal if there's time, otherwise before the one after.
+    func nextReminder(from now: Date = .now, calendar: Calendar = .current) -> Date? {
+        guard let days = remindDaysBefore else { return nil }
+        var renewal = upcomingRenewal(from: now, calendar: calendar)
+        for _ in 0..<3 {
+            if let day = calendar.date(byAdding: .day, value: -days, to: calendar.startOfDay(for: renewal)),
+               let fire = calendar.date(bySettingHour: Self.reminderHour, minute: 0, second: 0, of: day),
+               fire > now {
+                return fire
+            }
+            guard let dayAfter = calendar.date(byAdding: .day, value: 1, to: renewal) else { return nil }
+            renewal = upcomingRenewal(from: dayAfter, calendar: calendar)
+        }
+        return nil
     }
 }

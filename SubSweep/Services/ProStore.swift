@@ -47,7 +47,8 @@ final class ProStore {
         guard let product else {
             #if targetEnvironment(simulator)
             // Simulator builds installed outside Xcode have no StoreKit config or sandbox,
-            // so testers would be stuck at the free limit.
+            // so testers would be stuck at the free limit. scripts/check_device_build.sh proves this is compiled out.
+            UserDefaults.standard.set(true, forKey: "subsweep.pro.simulatorFallbackUnlock")
             unlock()
             #else
             purchaseError = "The store isn't available right now. Try again later."
@@ -70,8 +71,18 @@ final class ProStore {
     }
 
     func restore() async {
-        try? await AppStore.sync()
+        purchaseError = nil
+        do {
+            try await AppStore.sync()
+        } catch StoreKitError.userCancelled {
+            purchaseError = "Restore cancelled."
+            return
+        } catch {
+            purchaseError = "Couldn't reach the App Store. Try again later."
+            return
+        }
         await refresh()
+        if !isPro { purchaseError = "No SubSweep Pro purchase found for this Apple Account." }
     }
 
     /// Used by UI tests so the paywall can be exercised without a store sandbox.

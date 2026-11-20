@@ -21,13 +21,13 @@ final class SubSweepUITests: XCTestCase {
 
     func testAddPopularServiceUpdatesTotals() {
         launch()
-        XCTAssertEqual(label("monthlyTotal"), "$0.00")
+        XCTAssertEqual(label("monthlyTotal"), "You spend $0.00 a month")
         app.buttons["emptyAddButton"].tap()
         app.buttons["preset_Netflix"].tap()
         app.buttons["saveSubscription"].tap()
 
         XCTAssertTrue(app.buttons["row_Netflix"].waitForExistence(timeout: 5))
-        XCTAssertEqual(label("monthlyTotal"), "$17.99")
+        XCTAssertEqual(label("monthlyTotal"), "You spend $17.99 a month")
         XCTAssertTrue(label("yearlyTotal").hasPrefix("$215.88 a year on 1 subscription"))
     }
 
@@ -44,7 +44,7 @@ final class SubSweepUITests: XCTestCase {
 
         let row = app.buttons["row_Gym"]
         XCTAssertTrue(row.waitForExistence(timeout: 5))
-        XCTAssertEqual(label("monthlyTotal"), "$30.00")
+        XCTAssertEqual(label("monthlyTotal"), "You spend $30.00 a month")
 
         row.tap()
         app.buttons["deleteSubscription"].tap()
@@ -53,13 +53,17 @@ final class SubSweepUITests: XCTestCase {
         XCTAssertTrue(row.exists, "Delete must wait for confirmation")
         confirm.tap()
         XCTAssertTrue(app.buttons["emptyAddButton"].waitForExistence(timeout: 5))
-        XCTAssertEqual(label("monthlyTotal"), "$0.00")
+        XCTAssertEqual(label("monthlyTotal"), "You spend $0.00 a month")
     }
 
     func testAuditShowsYearlySavings() {
         launch(["-seedSample"])
         app.tabBars.buttons["Audit"].tap()
 
+        XCTAssertEqual(label("auditName"), "Netflix")
+        app.buttons["cancelButton"].tap()
+        XCTAssertEqual(label("auditName"), "Spotify")
+        app.buttons["undoVerdict"].tap()
         XCTAssertEqual(label("auditName"), "Netflix")
         app.buttons["cancelButton"].tap()
         XCTAssertEqual(label("auditName"), "Spotify")
@@ -80,10 +84,8 @@ final class SubSweepUITests: XCTestCase {
 
         app.buttons["unlockPro"].tap()
         XCTAssertTrue(app.staticTexts["paywallTitle"].waitForNonExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["saveSubscription"].waitForExistence(timeout: 5), "Unlocking should continue to the add form")
         XCTAssertFalse(app.staticTexts["freeSlots"].exists)
-
-        app.buttons["addSubscription"].tap()
-        XCTAssertTrue(app.buttons["saveSubscription"].waitForExistence(timeout: 5))
     }
 
     func testSimulatorUnlocksWhenStoreUnavailable() {
@@ -107,5 +109,41 @@ final class SubSweepUITests: XCTestCase {
         price.typeText("abc12.34xyz")
         XCTAssertTrue(app.staticTexts["priceError"].waitForExistence(timeout: 5))
         XCTAssertFalse(app.buttons["saveSubscription"].isEnabled)
+    }
+
+    func testDuplicateIsBlocked() {
+        launch(["-seedSample"])
+        app.buttons["addSubscription"].tap()
+        app.buttons["preset_Netflix"].tap()
+        XCTAssertTrue(app.staticTexts["duplicateError"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["saveSubscription"].isEnabled)
+    }
+
+    func testFreeTrialAtZeroSaves() {
+        launch()
+        app.buttons["addSubscription"].tap()
+        let name = app.textFields["nameField"]
+        name.tap()
+        name.typeText("Trial")
+        let price = app.textFields["priceField"]
+        price.tap()
+        price.typeText("0")
+        XCTAssertTrue(app.buttons["saveSubscription"].isEnabled)
+        app.buttons["saveSubscription"].tap()
+        XCTAssertTrue(app.buttons["row_Trial"].waitForExistence(timeout: 5))
+    }
+
+    func testCloseWithChangesAsksBeforeDiscarding() {
+        launch()
+        app.buttons["addSubscription"].tap()
+        let name = app.textFields["nameField"]
+        name.tap()
+        name.typeText("Gym")
+        app.buttons["closeForm"].tap()
+        let discard = app.buttons["Discard changes"]
+        XCTAssertTrue(discard.waitForExistence(timeout: 5))
+        XCTAssertTrue(app.textFields["nameField"].exists, "Close must not discard before confirming")
+        discard.tap()
+        XCTAssertTrue(app.buttons["emptyAddButton"].waitForExistence(timeout: 5))
     }
 }

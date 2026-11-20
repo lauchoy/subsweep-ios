@@ -25,7 +25,7 @@ enum ServiceCatalog {
         .init(name: "Audible", price: d("14.95"), cycle: .monthly, category: "Books", cancelURL: URL(string: "https://www.audible.com/account/overview"), symbol: "headphones"),
         .init(name: "Adobe Creative Cloud", price: d("59.99"), cycle: .monthly, category: "Software", cancelURL: URL(string: "https://account.adobe.com/plans"), symbol: "paintbrush"),
         .init(name: "ChatGPT Plus", price: d("20.00"), cycle: .monthly, category: "Software", cancelURL: URL(string: "https://chatgpt.com/#settings/Subscription"), symbol: "bubble.left.and.text.bubble.right"),
-        .init(name: "Planet Fitness", price: d("15.00"), cycle: .monthly, category: "Fitness", cancelURL: URL(string: "https://www.planetfitness.com/my-account"), symbol: "figure.run"),
+        .init(name: "Planet Fitness", price: d("15.00"), cycle: .monthly, category: "Fitness", cancelURL: nil, symbol: "figure.run"),
     ]
 
     static func match(_ name: String) -> KnownService? {

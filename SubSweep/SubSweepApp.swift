@@ -22,7 +22,12 @@ struct SubSweepApp: App {
             RootView()
                 .environment(store)
                 .environment(pro)
-                .task { await pro.load() }
+                .task {
+                    await pro.load()
+                    if !LaunchSeed.isUITesting, await ReminderScheduler.isAuthorized() {
+                        ReminderScheduler.reschedule(store.subscriptions)
+                    }
+                }
         }
     }
 }
