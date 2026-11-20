@@ -32,10 +32,12 @@ struct SubscriptionFormView: View {
         _cycle = State(initialValue: subscription?.cycle ?? .monthly)
         _nextRenewal = State(initialValue: renewal)
         _category = State(initialValue: subscription?.category ?? "Other")
-        _remindDays = State(initialValue: subscription.map { $0.remindDaysBefore ?? -1 } ?? 2)
+        _remindDays = State(initialValue: subscription.map { $0.remindDaysBefore ?? -1 } ?? Self.defaultRemindDays)
     }
 
     private var price: Decimal? { Subscription.parsePrice(priceText) }
+
+    private static let defaultRemindDays = 2
 
     private var trimmedName: String { name.trimmingCharacters(in: .whitespaces) }
 
@@ -47,9 +49,12 @@ struct SubscriptionFormView: View {
     private var canSave: Bool { !trimmedName.isEmpty && price != nil && !isDuplicate }
 
     private var isDirty: Bool {
-        guard let original else { return !trimmedName.isEmpty || !priceText.isEmpty }
+        let dateChanged = !Calendar.current.isDate(nextRenewal, inSameDayAs: initialRenewal)
+        guard let original else {
+            return !trimmedName.isEmpty || !priceText.isEmpty || cycle != .monthly || remindDays != Self.defaultRemindDays || dateChanged
+        }
         return trimmedName != original.name || price != original.price || cycle != original.cycle
-            || !Calendar.current.isDate(nextRenewal, inSameDayAs: initialRenewal)
+            || dateChanged
             || (remindDays < 0 ? nil : remindDays) != original.remindDaysBefore
     }
 
