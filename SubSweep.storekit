@@ -1,0 +1,24 @@
+{
+  "identifier" : "5C1D2A10",
+  "nonRenewingSubscriptions" : [],
+  "products" : [
+    {
+      "displayPrice" : "4.99",
+      "familyShareable" : true,
+      "internalID" : "7A3E9B21",
+      "localizations" : [
+        {
+          "description" : "Unlimited subscriptions and reminders, forever.",
+          "displayName" : "SubSweep Pro",
+          "locale" : "en_US"
+        }
+      ],
+      "productID" : "com.lauchoy.subsweep.pro",
+      "referenceName" : "SubSweep Pro (lifetime)",
+      "type" : "NonConsumable"
+    }
+  ],
+  "settings" : {},
+  "subscriptionGroups" : [],
+  "version" : { "major" : 3, "minor" : 0 }
+}
