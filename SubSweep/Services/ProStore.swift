@@ -45,7 +45,13 @@ final class ProStore {
         purchaseError = nil
         if product == nil { await load() }
         guard let product else {
+            #if targetEnvironment(simulator)
+            // Simulator builds installed outside Xcode have no StoreKit config or sandbox,
+            // so testers would be stuck at the free limit.
+            unlock()
+            #else
             purchaseError = "The store isn't available right now. Try again later."
+            #endif
             return
         }
         do {

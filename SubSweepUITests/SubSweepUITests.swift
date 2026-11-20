@@ -81,4 +81,14 @@ final class SubSweepUITests: XCTestCase {
         app.buttons["addSubscription"].tap()
         XCTAssertTrue(app.buttons["saveSubscription"].waitForExistence(timeout: 5))
     }
+
+    func testSimulatorUnlocksWhenStoreUnavailable() {
+        launch(["-seedFull", "-realStore"])
+        app.buttons["addSubscription"].tap()
+        XCTAssertTrue(app.staticTexts["paywallTitle"].waitForExistence(timeout: 5))
+
+        app.buttons["unlockPro"].tap()
+        XCTAssertTrue(app.staticTexts["paywallTitle"].waitForNonExistence(timeout: 10))
+        XCTAssertFalse(app.staticTexts["freeSlots"].exists)
+    }
 }

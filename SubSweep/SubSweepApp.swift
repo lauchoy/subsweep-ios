@@ -29,6 +29,7 @@ struct SubSweepApp: App {
 
 enum LaunchSeed {
     static var isUITesting: Bool { ProcessInfo.processInfo.arguments.contains("-uiTesting") }
+    static var bypassesStore: Bool { isUITesting && !ProcessInfo.processInfo.arguments.contains("-realStore") }
 
     static func subscriptions(for args: [String]) -> [Subscription] {
         let now = Date.now

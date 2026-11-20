@@ -35,7 +35,7 @@ struct PaywallView: View {
                 Button {
                     Task {
                         purchasing = true
-                        if LaunchSeed.isUITesting { pro.unlockForTesting() } else { await pro.purchase() }
+                        if LaunchSeed.bypassesStore { pro.unlockForTesting() } else { await pro.purchase() }
                         purchasing = false
                         if pro.isPro { dismiss() }
                     }
