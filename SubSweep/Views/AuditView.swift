@@ -15,7 +15,7 @@ struct AuditView: View {
                         .id(current.id)
                         .transition(.asymmetric(insertion: .move(edge: .trailing), removal: .opacity))
                 } else {
-                    AuditSummary { lastDecided = nil }
+                    AuditSummary { lastDecided = nil; reschedule() }
                 }
             }
             .animation(.snappy, value: store.undecided.count)
@@ -34,6 +34,7 @@ struct AuditView: View {
 
     private func decide(_ verdict: AuditVerdict, for sub: Subscription) {
         store.setVerdict(verdict, for: sub.id)
+        reschedule()
         lastDecided = sub
         let message = verdict == .cancel ? "\(sub.name) marked to cancel" : "Keeping \(sub.name)"
         AccessibilityNotification.Announcement(message).post()
@@ -41,7 +42,14 @@ struct AuditView: View {
 
     private func undo(_ sub: Subscription) {
         store.setVerdict(.undecided, for: sub.id)
+        reschedule()
         lastDecided = nil
+    }
+
+    /// Subscriptions marked Cancel get no reminders, so every verdict change re-queues them.
+    private func reschedule() {
+        guard !LaunchSeed.isUITesting else { return }
+        ReminderScheduler.reschedule(store.subscriptions)
     }
 }
 
