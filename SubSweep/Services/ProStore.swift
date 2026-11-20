@@ -13,7 +13,11 @@ final class ProStore {
     private let unlockedKey = "subsweep.pro.unlocked"
     private var updatesTask: Task<Void, Never>?
 
+    private let forcePro: Bool
+    private let simulatorFallbackKey = "subsweep.pro.simulatorFallbackUnlock"
+
     init(forcePro: Bool = false) {
+        self.forcePro = forcePro
         isPro = forcePro || UserDefaults.standard.bool(forKey: unlockedKey)
         updatesTask = Task { [weak self] in
             for await update in Transaction.updates {
@@ -32,6 +36,7 @@ final class ProStore {
         await refresh()
     }
 
+    /// StoreKit is the source of truth: a refunded or revoked purchase drops out of `currentEntitlements`.
     func refresh() async {
         for await entitlement in Transaction.currentEntitlements {
             if case .verified(let transaction) = entitlement, transaction.productID == Self.productID {
@@ -39,6 +44,9 @@ final class ProStore {
                 return
             }
         }
+        guard !forcePro, !UserDefaults.standard.bool(forKey: simulatorFallbackKey) else { return }
+        isPro = false
+        UserDefaults.standard.set(false, forKey: unlockedKey)
     }
 
     func purchase() async {
@@ -48,7 +56,7 @@ final class ProStore {
             #if targetEnvironment(simulator)
             // Simulator builds installed outside Xcode have no StoreKit config or sandbox,
             // so testers would be stuck at the free limit. scripts/check_device_build.sh proves this is compiled out.
-            UserDefaults.standard.set(true, forKey: "subsweep.pro.simulatorFallbackUnlock")
+            UserDefaults.standard.set(true, forKey: simulatorFallbackKey)
             unlock()
             #else
             purchaseError = "The store isn't available right now. Try again later."
