@@ -57,7 +57,10 @@ struct SubscriptionFormView: View {
         var sub = original ?? Subscription(name: "", price: 0, cycle: .monthly, nextRenewal: .now)
         sub.price = price ?? 0
         sub.cycle = cycle
-        if !Calendar.current.isDate(nextRenewal, inSameDayAs: initialRenewal) || original == nil { sub.nextRenewal = nextRenewal }
+        // Keep the original anchor (e.g. Jan 31) unless the date or the cycle changed; then anchor on the shown date.
+        if original == nil || cycle != original?.cycle || !Calendar.current.isDate(nextRenewal, inSameDayAs: initialRenewal) {
+            sub.nextRenewal = nextRenewal
+        }
         sub.remindDaysBefore = remindDays < 0 ? nil : remindDays
         return sub
     }
