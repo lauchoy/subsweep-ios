@@ -4,6 +4,7 @@ import SwiftUI
 struct SubSweepApp: App {
     @State private var store: SubscriptionStore
     @State private var pro: ProStore
+    @Environment(\.scenePhase) private var scenePhase
 
     init() {
         let args = ProcessInfo.processInfo.arguments
@@ -22,11 +23,11 @@ struct SubSweepApp: App {
             RootView()
                 .environment(store)
                 .environment(pro)
-                .task {
-                    await pro.load()
-                    if !LaunchSeed.isUITesting, await ReminderScheduler.isAuthorized() {
-                        ReminderScheduler.reschedule(store.subscriptions)
-                    }
+                .task { await pro.load() }
+                .task(id: scenePhase) {
+                    // Each reminder is a one-shot request, so queue the next cycle's whenever the app comes back.
+                    guard scenePhase == .active, !LaunchSeed.isUITesting, await ReminderScheduler.isAuthorized() else { return }
+                    ReminderScheduler.reschedule(store.subscriptions)
                 }
         }
     }

@@ -76,5 +76,6 @@ struct SettingsView: View {
         let settings = await UNUserNotificationCenter.current().notificationSettings()
         remindersOn = await ReminderScheduler.isAuthorized()
         remindersDenied = settings.authorizationStatus == .denied
+        if remindersOn && !LaunchSeed.isUITesting { ReminderScheduler.reschedule(store.subscriptions) }
     }
 }
